@@ -1,0 +1,18 @@
+{
+  "name": "three.test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "HobaPro",
+  "license": "ISC",
+  "dependencies": {
+    "dat.gui": "^0.7.9",
+    "express": "^4.18.2",
+    "path": "^0.12.7",
+    "three": "^0.148.0",
+    "three-orbit-controls": "^82.1.0"
+  }
+}
