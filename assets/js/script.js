@@ -1,139 +1,189 @@
 import * as THREE from '/build/three.module.js';
 
+import Renderer from './renderer.js';
+import * as Mesh from './Mesh.js';
+import * as Light from './Light.js';
+
 import { OrbitControls } from '/jsm/controls/OrbitControls.js';
-import { DragControls } from '/jsm/controls/DragControls.js';
+//import { DragControls } from '/jsm/controls/DragControls.js';
 
 import Stats from '/jsm/libs/stats.module.js'
 import * as dat from '/dat.gui/build/dat.gui.module.js';
 
-const scene = new THREE.Scene();
+import { LoadModel } from './loadModel.js';
 
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-camera.position.set(0, 30, 20);
-camera.rotation.x = 45;
+/* -------------- Textures -------------- */
 
-const renderer = new THREE.WebGLRenderer()
+//import ground_1defuse from "/assets/textures/ground_1/defuse.jpg";
 
-const orbitControls = new OrbitControls(camera, renderer.domElement)
+/* -------------- End Textures -------------- */ 
 
 const gui = new dat.GUI();
 
-const gridHelper = new THREE.GridHelper(30, 20);
-scene.add(gridHelper);
-
-const axesHelper = new THREE.AxesHelper( 5 );
-scene.add( axesHelper );
-
-const planeGeometry = new THREE.PlaneGeometry(30, 30, 1);
-const planeMaterial = new THREE.MeshStandardMaterial({color: 0xFFFFFF});
-const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-plane.rotation.x = -0.5 * Math.PI;
-scene.add(plane);
 
 
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-const cube = new THREE.Mesh(geometry, material);
-cube.position.y += 2;
+const renderer = new Renderer(window.innerWidth, window.innerHeight, 75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const options = {
-    cubeColor: "#fff",
-}
+renderer.camera.position.y = 30;
+renderer.camera.rotation.x = 90;
 
-const positionOptions = {
-    X: cube.position.x,
-    Y: cube.position.y,
-    Z: cube.position.z,
-}
+document.body.appendChild(renderer.domElement);
 
-const rotationOptions = {
-    X: cube.rotation.x,
-    Y: cube.rotation.y,
-    Z: cube.rotation.z,
-}
+const textureLoader = new THREE.TextureLoader();
 
-const scaleOptions = {
-    X: cube.scale.x,
-    Y: cube.scale.y,
-    Z: cube.scale.z,
-}
-
-gui.addColor(options, "cubeColor").onChange((e) => {
-    cube.material.color.set(e);
-});
-
-const transformGUI = gui.addFolder("Transform")
-
-const positionGUI = transformGUI.addFolder("Position");
-
-const rotationGUI = transformGUI.addFolder("Rotation");
-
-const scaleGUI = transformGUI.addFolder("Scale");
-
-positionGUI.add(positionOptions, "X", -100, 100).onChange(e => {
-    cube.position.x = e;
-});
-
-positionGUI.add(positionOptions, "Y", -100, 100).onChange(e => {
-    cube.position.y = e;
-});
-
-positionGUI.add(positionOptions, "Z", -100, 100).onChange(e => {
-    cube.position.z = e;
-});
-
-rotationGUI.add(rotationOptions, "X", 0, 360).onChange(e => {
-    cube.rotation.x = e * (Math.PI / 180);
-});
-
-rotationGUI.add(rotationOptions, "Y", 0, 360).onChange(e => {
-    cube.rotation.y = e * (Math.PI / 180);
-});
-
-rotationGUI.add(rotationOptions, "Z", 0, 360).onChange(e => {
-    cube.rotation.z = e * (Math.PI / 180);
-});
-
-scaleGUI.add(scaleOptions, "X", 0.1, 100).onChange(e => {
-    cube.scale.x = e;
-})
-
-scaleGUI.add(scaleOptions, "Y", 0.1, 100).onChange(e => {
-    cube.scale.y = e;
-})
-
-scaleGUI.add(scaleOptions, "Z", 0.1, 100).onChange(e => {
-    cube.scale.z = e;
-})
-
-const dragControls = new DragControls([cube], camera, renderer.domElement);
-dragControls.addEventListener("dragstart", function(event){
-    orbitControls.enabled = false;
-})
-
-dragControls.addEventListener("dragend", function(event){
-    orbitControls.enabled = true;
-})
-
-scene.add(cube);
+const orbitControls = new OrbitControls(renderer.camera, renderer.domElement)
 orbitControls.update();
 
-renderer.setSize( window.innerWidth, window.innerHeight ); 
+const skyMaterial = new THREE.MeshBasicMaterial({
+    color: "#fff",
+    //map: new THREE.TextureLoader().load("/assets/textures/sky.jpg"),
+    side: THREE.DoubleSide,
+})
 
-document.body.appendChild( renderer.domElement );
+const sky = new Mesh.Box(renderer.scene, new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(1000, 1000, 1000), skyMaterial);
 
-renderer.render(scene, camera);
+console.log(sky.mesh.position);
 
-const directionalLight = new THREE.DirectionalLight( 0xffffff, 2 );
-directionalLight.position.set(10, 10, 10);
-scene.add( directionalLight );
+const skyLight = new THREE.HemisphereLight( 0xffffbb, 0x080820, 2 );
+renderer.scene.add(skyLight);
 
-let speed = 0.01;
+//const directionaLight = new Light.DirectionaLight(renderer.scene, 0xffffff, 1, new THREE.Vector3(0, 100, 0));
+//const spotLight = new Light.SpotLight(renderer.scene, null, 5, 20, null, null, null, new THREE.Vector3(0, 10, 0));
 
-function tick(time){
-    //cube.rotation.x += 0.01;
-    //speed += 0.001;
-    renderer.render( scene, camera );
+const gound_1Defuse = textureLoader.load("/assets/textures/ground_1/defuse.jpg");
+gound_1Defuse.wrapS = THREE.RepeatWrapping;
+gound_1Defuse.wrapT = THREE.RepeatWrapping;
+gound_1Defuse.repeat.set( 15, 15 );
+
+const gound_1AO = textureLoader.load("/assets/textures/ground_1/ao.jpg");
+gound_1AO.wrapS = THREE.RepeatWrapping;
+gound_1AO.wrapT = THREE.RepeatWrapping;
+gound_1AO.repeat.set( 15, 15 );
+
+const gound_1Displacement = textureLoader.load("/assets/textures/ground_1/displacement.jpg");
+gound_1Displacement.wrapS = THREE.RepeatWrapping;
+gound_1Displacement.wrapT = THREE.RepeatWrapping;
+gound_1Displacement.repeat.set( 15, 15 );
+
+const gound_1Normal = textureLoader.load("/assets/textures/ground_1/normal.jpg");
+gound_1Normal.wrapS = THREE.RepeatWrapping;
+gound_1Normal.wrapT = THREE.RepeatWrapping;
+gound_1Normal.repeat.set( 15, 15 );
+
+const gound_1Roughness = textureLoader.load("/assets/textures/ground_1/roughness.jpg");
+gound_1Roughness.wrapS = THREE.RepeatWrapping;
+gound_1Roughness.wrapT = THREE.RepeatWrapping;
+gound_1Roughness.repeat.set( 15, 15 );
+
+const mask_1 = textureLoader.load("/assets/textures/ground_1/mask_1.jpg")
+
+/*const layer01Data = {
+    map: gound_1Defuse,
+    direction: new THREE.Vector2(0.7, -0.5),
+    speed: 0.00008,
+    repeat: new THREE.Vector2(1, 1),
 }
 
-renderer.setAnimationLoop(tick);
+const layer02Data = {
+    map: gound_1Normal,
+    direction: new THREE.Vector2(0.7, 0.7),
+    speed: 0.00005,
+    repeat: new THREE.Vector2(2, 2),
+}*/
+
+
+/*const layer01Data = {
+    map: gound_1Defuse,
+    repeat: new THREE.Vector2(1, 1),
+}
+
+const layer02Data = {
+    map: gound_1Normal,
+    repeat: new THREE.Vector2(2, 2),
+}*/
+
+const plane01VertexShader = `
+    uniform mat4 projectionMatrix;
+    uniform mat4 viewMatrix;
+    uniform mat4 modelMatrix;
+    uniform mat4 modelViewMatrix;
+
+    attribute vec3 position;
+    attribute vec2 uv;
+
+    varying vec2 vuv;
+
+    void main(){
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vuv = uv;
+    }
+`;
+const plane01FragmentShader = `
+    precision mediump float;
+
+    uniform vec3 opp;
+    uniform sampler2D layer01;
+    uniform sampler2D layer02;
+    uniform sampler2D mask;
+
+    varying vec2 vuv;
+
+    void main(void){
+
+        vec4 layer01 = texture2D(layer01, vuv);
+        vec4 layer02 = texture2D(layer02, vuv);
+        vec4 mask = texture2D(mask, vuv);
+
+        vec4 st = vec4(opp, 1.0);
+
+        vec4 kk = ((layer01 * mask) + vec4(1.0, 1.0, 1.0, 1.0)) * st;
+
+        gl_FragColor = kk;
+    }
+`;
+
+
+const planeMat = new THREE.RawShaderMaterial({
+    uniforms: {
+
+        layer01: {
+            value: gound_1Defuse
+        },
+
+        layer02: {
+            value: gound_1Normal
+        },
+        mask: {
+            value: mask_1,
+        },
+        opp: {
+            value: new THREE.Vector3(1.0, 1.0, 1.0),
+        },
+    },
+
+    vertexShader: plane01VertexShader,
+
+    fragmentShader: plane01FragmentShader,
+
+    wireframe: false,
+});
+
+gui.addColor({
+    color: "#fff",
+}, "color").onChange((e) => {
+    planeMat.uniforms.opp.value = new THREE.Vector3(new THREE.Color(e).r, new THREE.Color(e).g, new THREE.Color(e).b);
+});
+
+const st = new THREE.MeshBasicMaterial({
+    color: "#fff",
+})
+
+//const plane_1 = new Mesh.Plane(renderer.scene, new THREE.Vector3(), new THREE.Vector3(-0.5 * Math.PI, 0, 0), new THREE.Vector3(60, 60, 1), st);
+
+LoadModel(renderer.scene);
+
+function tick(time){
+    renderer.Render();
+}
+
+renderer.renderer.setAnimationLoop(tick);
